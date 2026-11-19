@@ -83,6 +83,13 @@
         <div class="panel">
             <div class="sec-title">1. بيانات المشروع والعميل</div>
             <div class="form-group">
+                <label>لغة عرض السعر بالكامل (غلاف واستثناءات وجدول):</label>
+                <select id="inQuoteLang" onchange="switchQuoteLanguage(); updateDocument();">
+                    <option value="ar" selected>العربية (Arabic)</option>
+                    <option value="en">الإنجليزية (English)</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label>تغيير صورة الترويسة (اختياري):</label>
                 <input type="file" id="bgInput" accept="image/*">
             </div>
@@ -184,27 +191,27 @@
                     <tbody>
                         <tr>
                             <td>
-                                <div class="page-break-after">
+                                <div class="page-break-after" id="coverPageDiv">
                                     <div class="meta-block">
-                                        <div>الموضوع : عرض سعر (<span id="outSubject1"></span>)</div>
-                                        <div>الموقع : <span id="outLocation1"></span></div>
-                                        <div>العميل : <span id="outClient1"></span></div>
-                                        <div>الرقم المرجعي : <span id="outRef"></span></div>
-                                        <div>التاريخ : <span id="outDate"></span></div>
+                                        <div><span id="lblSubject">الموضوع : عرض سعر</span> (<span id="outSubject1"></span>)</div>
+                                        <div><span id="lblLocation">الموقع :</span> <span id="outLocation1"></span></div>
+                                        <div><span id="lblClient">العميل :</span> <span id="outClient1"></span></div>
+                                        <div><span id="lblRef">الرقم المرجعي :</span> <span id="outRef"></span></div>
+                                        <div><span id="lblDate">التاريخ :</span> <span id="outDate"></span></div>
                                     </div>
 
                                     <div class="intro-block">
-                                        <div><strong>السادة الأفاضل،</strong></div>
-                                        <div style="margin-top: 6px;">يسعدنا أن نقدم لكم عرض أسعارنا الخاص بـ <span id="outSubject2"></span> في <span id="outLocation2"></span>.</div>
+                                        <div><strong id="lblGreeting">السادة الأفاضل،</strong></div>
+                                        <div style="margin-top: 6px;" id="outIntroText"></div>
                                     </div>
 
-                                    <div style="font-weight: 700; font-size: 13.5px;">ملخص تكلفة المشروع:</div>
-                                    <table class="summary-table">
+                                    <div style="font-weight: 700; font-size: 13.5px;" id="lblSummaryTitle">ملخص تكلفة المشروع:</div>
+                                    <table class="summary-table" id="summaryTableEl">
                                         <thead>
                                             <tr>
-                                                <th style="width: 60px; text-align: center;">الرقم</th>
-                                                <th style="text-align: right;">الوصف</th>
-                                                <th style="width: 170px; text-align: left;">المبلغ (<span id="outCurrency"></span>)</th>
+                                                <th style="width: 60px; text-align: center;" id="thSumNo">الرقم</th>
+                                                <th style="text-align: right;" id="thSumDesc">الوصف</th>
+                                                <th style="width: 170px; text-align: left;" id="thSumAmount">المبلغ (<span id="outCurrency"></span>)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -215,7 +222,7 @@
                                             </tr>
                                             <tr id="summaryVatRow" style="display: none;">
                                                 <td></td>
-                                                <td style="text-align: center;">ضريبة القيمة المضافة (<span id="outVatRateLabel">15</span>%)</td>
+                                                <td style="text-align: center;" id="outVatLabelCell">ضريبة القيمة المضافة (<span id="outVatRateLabel">15</span>%)</td>
                                                 <td style="text-align: left;" id="outVatAmount">0.00</td>
                                             </tr>
                                             <tr class="summary-total">
@@ -227,7 +234,7 @@
                                     </table>
 
                                     <div class="exclusions-block">
-                                        <h4>الاستثناءات من النطاق:</h4>
+                                        <h4 id="lblExclTitle">الاستثناءات من النطاق:</h4>
                                         <div id="outExclusions"></div>
                                     </div>
                                 </div>
@@ -265,6 +272,22 @@
         function toggleVatInput() {
             const hasVat = document.getElementById('inHasVat').value === 'yes';
             document.getElementById('vatRateBox').style.display = hasVat ? 'block' : 'none';
+        }
+        function switchQuoteLanguage() {
+            const qLang = document.getElementById('inQuoteLang').value;
+            const exclBox = document.getElementById('inExclusions');
+            const tblLang = document.getElementById('inTableLang');
+            const currBox = document.getElementById('inCurrency');
+
+            if (qLang === 'en') {
+                tblLang.value = 'en';
+                if (currBox.value === 'ريال سعودي') currBox.value = 'SAR';
+                exclBox.value = "1. In the event that the total project cost exceeds the quoted total by more than 5%, [Client] shall bear these additional costs.\n2. Any additional quantities not included in the provided drawings and BOQ shall be treated as variation orders and charged separately.\n3. Supply of any materials not explicitly mentioned in this quotation shall be borne entirely by [Client].\n4. Any third-party laboratory testing and inspection fees unless stated otherwise.\n5. Any delay in site handover will result in an extension of the project execution period.\nAny delay in payments will affect the project schedule.";
+            } else {
+                tblLang.value = 'ar';
+                if (currBox.value === 'SAR') currBox.value = 'ريال سعودي';
+                exclBox.value = "1. في حال زيادة التكلفة الإجمالية للمشروع عن قيمة الإجمالي للمشروع بمقدار يزيد عن 5% ستتحمل [العميل] هذه التكاليف.\n2. أي كميات إضافية غير مدرجة في المخططات وجداول الكميات المقدمة ستُعامل كأعمال تغييرية (أوامر تغيير) وتُحتسب تكلفتها بشكل منفصل.\n3. توريد أي مواد لم تُذكر بوضوح في هذا العرض يتحمل جميع تكاليفها [العميل].\n4. أي رسوم فحص واختبار تطلبها مختبرات طرف ثالث ما لم ينص على خلاف ذلك.\n5. أي تأخير في تسليم الموقع سيؤدي إلى تعديل مدة تنفيذ المشروع.\nأي تأخير في الدفعات سيؤثر على الجدول الزمني للمشروع.";
+            }
         }
 
         document.getElementById('bgInput').addEventListener('change', function(e) {
@@ -560,26 +583,72 @@
             renderExtraColsUI();
             updateDocument();
         }
-        function updateDocument() {
+               function updateDocument() {
             const subj = document.getElementById('inSubject').value;
             const loc = document.getElementById('inLocation').value;
             const cli = document.getElementById('inClient').value;
             const lang = document.getElementById('inTableLang').value;
+            const qLang = document.getElementById('inQuoteLang') ? document.getElementById('inQuoteLang').value : 'ar';
             const hasVat = document.getElementById('inHasVat').value === 'yes';
             const vatRate = parseFloat(document.getElementById('inVatRate').value) || 0;
+            const currText = document.getElementById('inCurrency').value;
 
             document.getElementById('outSubject1').innerText = subj;
-            document.getElementById('outSubject2').innerText = subj;
             document.getElementById('outSubject3').innerText = subj;
             document.getElementById('outLocation1').innerText = loc;
-            document.getElementById('outLocation2').innerText = loc;
             document.getElementById('outClient1').innerText = cli;
             document.getElementById('outRef').innerText = document.getElementById('inRef').value;
-            document.getElementById('outCurrency').innerText = document.getElementById('inCurrency').value;
+
+            const coverDiv = document.getElementById('coverPageDiv');
+            const sumTable = document.getElementById('summaryTableEl');
+
+            if (qLang === 'en') {
+                coverDiv.dir = 'ltr';
+                sumTable.dir = 'ltr';
+                document.getElementById('lblSubject').innerText = 'Subject : Quotation for';
+                document.getElementById('lblLocation').innerText = 'Location :';
+                document.getElementById('lblClient').innerText = 'Client :';
+                document.getElementById('lblRef').innerText = 'Ref. No. :';
+                document.getElementById('lblDate').innerText = 'Date :';
+                document.getElementById('lblGreeting').innerText = 'Dear Sirs,';
+                document.getElementById('outIntroText').innerHTML = 'We are pleased to submit our quotation for <strong>' + subj + '</strong> at <strong>' + loc + '</strong>.';
+                document.getElementById('lblSummaryTitle').innerText = 'Project Cost Summary:';
+                document.getElementById('thSumNo').innerText = 'No.';
+                document.getElementById('thSumDesc').innerText = 'Description';
+                document.getElementById('thSumDesc').style.textAlign = 'left';
+                document.getElementById('thSumAmount').innerHTML = 'Amount (' + currText + ')';
+                document.getElementById('thSumAmount').style.textAlign = 'right';
+                document.getElementById('outSubTotal').style.textAlign = 'right';
+                document.getElementById('outVatAmount').style.textAlign = 'right';
+                document.getElementById('outGrandTotal').style.textAlign = 'right';
+                document.getElementById('lblExclTitle').innerText = 'Exclusions from Scope:';
+            } else {
+                coverDiv.dir = 'rtl';
+                sumTable.dir = 'rtl';
+                document.getElementById('lblSubject').innerText = 'الموضوع : عرض سعر';
+                document.getElementById('lblLocation').innerText = 'الموقع :';
+                document.getElementById('lblClient').innerText = 'العميل :';
+                document.getElementById('lblRef').innerText = 'الرقم المرجعي :';
+                document.getElementById('lblDate').innerText = 'التاريخ :';
+                document.getElementById('lblGreeting').innerText = 'السادة الأفاضل،';
+                document.getElementById('outIntroText').innerHTML = 'يسعدنا أن نقدم لكم عرض أسعارنا الخاص بـ ' + subj + ' في ' + loc + '.';
+                document.getElementById('lblSummaryTitle').innerText = 'ملخص تكلفة المشروع:';
+                document.getElementById('thSumNo').innerText = 'الرقم';
+                document.getElementById('thSumDesc').innerText = 'الوصف';
+                document.getElementById('thSumDesc').style.textAlign = 'right';
+                document.getElementById('thSumAmount').innerHTML = 'المبلغ (' + currText + ')';
+                document.getElementById('thSumAmount').style.textAlign = 'left';
+                document.getElementById('outSubTotal').style.textAlign = 'left';
+                document.getElementById('outVatAmount').style.textAlign = 'left';
+                document.getElementById('outGrandTotal').style.textAlign = 'left';
+                document.getElementById('lblExclTitle').innerText = 'الاستثناءات من النطاق:';
+            }
 
             const rawExcl = document.getElementById('inExclusions') ? document.getElementById('inExclusions').value : '';
-            const safeCli = cli ? '<strong>' + cli + '</strong>' : 'العميل';
-            const formattedExcl = rawExcl.replace(/[\[\(]?العميل[\]\)]?/g, safeCli);
+            const safeCli = cli ? '<strong>' + cli + '</strong>' : (qLang === 'en' ? 'the Client' : 'العميل');
+            const formattedExcl = rawExcl
+                .replace(/[\[\(]?العميل[\]\)]?/g, safeCli)
+                .replace(/[\[\(]?Client[\]\)]?/gi, safeCli);
             const outExclEl = document.getElementById('outExclusions');
             if (outExclEl) {
                 outExclEl.innerHTML = formattedExcl.split(/\r?\n/).map(function(line) {
@@ -716,17 +785,17 @@
                 tbody.innerHTML += '<tr class="boq-grand-row"><td colspan="' + labelSpan + '">' + lblTotal + '</td><td>' + fmt(finalGrandTotal) + '</td></tr>';
             }
 
-            document.getElementById('outSubTotal').innerText = fmt(subTotal);
+                     document.getElementById('outSubTotal').innerText = fmt(subTotal);
             if (hasVat) {
                 const vatAmount = subTotal * (vatRate / 100);
                 document.getElementById('summaryVatRow').style.display = 'table-row';
-                document.getElementById('outVatRateLabel').innerText = vatRate;
+                document.getElementById('outVatLabelCell').innerHTML = (qLang === 'en') ? ('VAT (' + vatRate + '%)') : ('ضريبة القيمة المضافة (' + vatRate + '%)');
                 document.getElementById('outVatAmount').innerText = fmt(vatAmount);
-                document.getElementById('outGrandTotalLabel').innerText = 'الإجمالي بعد الضريبة';
+                document.getElementById('outGrandTotalLabel').innerText = (qLang === 'en') ? 'Total After VAT' : 'الإجمالي بعد الضريبة';
                 document.getElementById('outGrandTotal').innerText = fmt(finalGrandTotal);
             } else {
                 document.getElementById('summaryVatRow').style.display = 'none';
-                document.getElementById('outGrandTotalLabel').innerText = 'الإجمالي';
+                document.getElementById('outGrandTotalLabel').innerText = (qLang === 'en') ? 'Grand Total' : 'الإجمالي';
                 document.getElementById('outGrandTotal').innerText = fmt(subTotal);
             }
         }
