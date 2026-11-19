@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مفازا الإنشائية - نظام إصدار عروض الأسعار</title>
+    <style>
+        :root { --primary: #0f172a; --accent: #1d4ed8; --success: #16a34a; --bg: #f1f5f9; --border: #cbd5e1; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+        body { margin: 0; background: var(--bg); color: #1e293b; }
+        .navbar { background: var(--primary); color: #fff; padding: 14px 25px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 17px; }
+        .workspace { display: grid; grid-template-columns: 380px 1fr; gap: 20px; max-width: 1450px; margin: 20px auto; padding: 0 20px; }
+        .panel { background: #fff; border-radius: 10px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.04); }
+        .sec-title { font-size: 14px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin: 15px 0 12px; }
+        .sec-title:first-child { margin-top: 0; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #334155; }
+        input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .upload-box { border: 2px dashed #94a3b8; border-radius: 8px; padding: 16px; text-align: center; background: #f8fafc; cursor: pointer; }
+        .upload-box:hover { border-color: var(--accent); background: #eff6ff; }
+        .map-row { display: grid; grid-template-columns: 105px 1fr; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+        .btn { width: 100%; padding: 11px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; margin-top: 10px; color: #fff; background: var(--success); }
+        .btn:hover { background: #15803d; }
+
+        .preview-area { background: #cbd5e1; padding: 25px; border-radius: 10px; overflow-y: auto; max-height: 85vh; display: flex; justify-content: center; }
+        .paper-wrapper {
+            width: 210mm; min-height: 297mm; background-color: #fff;
+            background-size: 100% auto; background-repeat: repeat-y;
+            padding: 0 14mm; box-shadow: 0 5px 15px rgba(0,0,0,0.2); color: #000;
+        }
+
+        .master-table { width: 100%; border-collapse: collapse; }
+        .header-spacer { height: 46mm; }
+        .footer-spacer { height: 34mm; }
+
+        .meta-block { font-size: 13.5px; font-weight: 700; line-height: 1.8; margin-bottom: 14px; }
+        .intro-block { font-size: 13px; line-height: 1.65; margin-bottom: 14px; }
+        .summary-table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: 13px; }
+        .summary-table th { background: #f8fafc; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; padding: 9px; font-weight: 700; }
+        .summary-table td { padding: 9px; border-bottom: 1px solid #e2e8f0; }
+        .summary-total td { font-weight: 700; border-top: 1.5px solid #94a3b8; border-bottom: 1.5px solid #94a3b8; background: #f8fafc; }
+        .exclusions-block { font-size: 11.8px; line-height: 1.7; margin-top: 10px; }
+        .exclusions-block h4 { margin: 0 0 6px; font-size: 13px; text-decoration: underline; }
+        .exclusions-block p { margin: 2px 0; }
+
+        .boq-title { font-size: 15px; font-weight: 700; margin: 0 0 10px; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 5px; }
+        .boq-table { width: 100%; border-collapse: collapse; font-size: 10.5px; background: rgba(255,255,255,0.92); table-layout: auto; }
+        .boq-table th { background: #1e293b; color: #fff; padding: 6px 4px; border: 1px solid #1e293b; text-align: center; white-space: nowrap; }
+        .boq-table td { border: 1px solid #cbd5e1; padding: 5px 4px; text-align: center; word-break: break-word; }
+        .boq-table td.desc-cell { text-align: right; min-width: 140px; }
+        .boq-table.ltr-table td.desc-cell { text-align: left; }
+        .boq-summary-row td { background: #f1f5f9; font-weight: 800; color: #0f172a; border: 1px solid #94a3b8; padding: 8px; font-size: 14px; text-align: center !important; }
+        .boq-grand-row td { background: #1e293b; color: #fff; font-weight: 800; border: 1px solid #1e293b; padding: 9px; font-size: 15px; text-align: center !important; }
+
+        .fixed-letterhead { display: none; }
+        @page { size: A4 portrait; margin: 0; }
+        @media print {
+            html, body { background: none !important; margin: 0 !important; padding: 0 !important; width: 210mm !important; }
+            .navbar, .panel { display: none !important; }
+            .workspace { display: block !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+            .preview-area { background: none !important; padding: 0 !important; overflow: visible !important; max-height: none !important; display: block !important; }
+            .paper-wrapper { width: 210mm !important; padding: 0 14mm !important; box-shadow: none !important; background: none !important; margin: 0 !important; }
+            .fixed-letterhead { display: block !important; position: fixed; top: 0; left: 0; width: 210mm; height: 297mm; z-index: -10; object-fit: fill; }
+            .master-table > thead { display: table-header-group; }
+            .master-table > tfoot { display: table-footer-group; }
+            .page-break-after { page-break-after: always; break-after: page; }
+            .boq-table tr { page-break-inside: avoid; break-inside: avoid; }
+            .boq-table thead { display: table-header-group; }
+        }
+    </style>
+</head>
+<body>
+    <img id="printLetterheadImg" class="fixed-letterhead" alt="">
+
+    <div class="navbar">
+        <h1>مفازا الإنشائية للمقاولات | نظام إصدار عروض الأسعار (EDMS)</h1>
+        <span style="font-size: 12px; background: #334155; padding: 4px 12px; border-radius: 15px;">مرتبط بـ SharePoint</span>
+    </div>
+
+    <div class="workspace">
+        <div class="panel">
+            <div class="sec-title">1. بيانات المشروع والعميل</div>
+            <div class="form-group">
+                <label>تغيير صورة الترويسة (اختياري):</label>
+                <input type="file" id="bgInput" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>الموضوع (اسم المشروع):</label>
+                <input type="text" id="inSubject" value="" oninput="updateDocument()">
+            </div>
+            <div class="grid-2">
+                <div class="form-group"><label>الموقع:</label><input type="text" id="inLocation" value="" oninput="updateDocument()"></div>
+                <div class="form-group"><label>العميل:</label><input type="text" id="inClient" value="" oninput="updateDocument()"></div>
+            </div>
+            <div class="grid-2">
+                <div class="form-group"><label>الرقم المرجعي:</label><input type="text" id="inRef" value="" oninput="updateDocument()"></div>
+                <div class="form-group"><label>العملة:</label><input type="text" id="inCurrency" value="ريال سعودي" oninput="updateDocument()"></div>
+            </div>
+            <div class="form-group">
+                <label>الاستثناءات من النطاق (كل بند في سطر):</label>
+                <textarea id="inExclusions" rows="6" style="line-height:1.5; resize:vertical;" oninput="updateDocument()">1. في حال زيادة التكلفة الإجمالية للمشروع عن قيمة الإجمالي للمشروع بمقدار يزيد عن 5% ستتحمل [العميل] هذه التكاليف.
+2. أي كميات إضافية غير مدرجة في المخططات وجداول الكميات المقدمة ستُعامل كأعمال تغييرية (أوامر تغيير) وتُحتسب تكلفتها بشكل منفصل.
+3. توريد أي مواد لم تُذكر بوضوح في هذا العرض يتحمل جميع تكاليفها [العميل].
+4. أي رسوم فحص واختبار تطلبها مختبرات طرف ثالث ما لم ينص على خلاف ذلك.
+5. أي تأخير في تسليم الموقع سيؤدي إلى تعديل مدة تنفيذ المشروع.
+أي تأخير في الدفعات سيؤثر على الجدول الزمني للمشروع.</textarea>
+            </div>
+
+            <div class="sec-title">2. إعدادات الضريبة ولغة الجدول</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>إضافة ضريبة (VAT)؟</label>
+                    <select id="inHasVat" onchange="toggleVatInput(); updateDocument();">
+                        <option value="no" selected>لا (بدون ضريبة)</option>
+                        <option value="yes">نعم (إضافة ضريبة)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="vatRateBox" style="display: none;">
+                    <label>نسبة الضريبة (%):</label>
+                    <input type="number" id="inVatRate" value="15" min="0" max="100" step="0.1" oninput="updateDocument()">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>لغة جدول الكميات والأسعار:</label>
+                <select id="inTableLang" onchange="updateDocument()">
+                    <option value="en" selected>إنجليزي (English)</option>
+                    <option value="ar">عربي (Arabic)</option>
+                </select>
+            </div>
+
+            <div class="sec-title">3. استيراد جدول الكميات (Excel)</div>
+            <div class="upload-box" onclick="document.getElementById('excelInput').click()">
+                <strong style="font-size: 13px; color: var(--accent);" id="fileStatus">اضغط لاختيار ملف الإكسل (.xlsx / .csv)</strong>
+                <input type="file" id="excelInput" accept=".xlsx, .csv" hidden>
+            </div>
+
+            <div id="mappingBox" style="display: none; margin-top: 12px;">
+                <div class="grid-2" style="margin-bottom: 8px;">
+                    <div><label>ورقة العمل:</label><select id="selSheet" onchange="readSheet()"></select></div>
+                    <div><label>صف العناوين:</label><input type="number" id="inHeaderRow" value="1" min="1" onchange="readSheet()"></div>
+                </div>
+                <div class="sec-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>4. التحكم بالأعمدة وربطها</span>
+                    <button type="button" onclick="addExtraColumn()" style="background:#1d4ed8; color:#fff; border:none; border-radius:4px; padding:3px 8px; font-size:11px; cursor:pointer;">+ إضافة عمود</button>
+                </div>
+                <div style="font-size:11px; color:#64748b; margin-bottom:6px;">أزل علامة الصح (✓) لإخفاء أي عمود من الجدول:</div>
+                
+                <div class="map-row" style="grid-template-columns: 20px 90px 1fr;">
+                    <input type="checkbox" id="chkItem" checked onchange="updateDocument()">
+                    <span>رقم البند:</span><select id="mItem" onchange="updateDocument()"></select>
+                </div>
+                <div class="map-row" style="grid-template-columns: 20px 90px 1fr;">
+                    <input type="checkbox" id="chkDesc" checked onchange="updateDocument()">
+                    <span>البيان:</span><select id="mDesc" onchange="updateDocument()"></select>
+                </div>
+                <div class="map-row" style="grid-template-columns: 20px 90px 1fr;">
+                    <input type="checkbox" id="chkUnit" checked onchange="updateDocument()">
+                    <span>الوحدة:</span><select id="mUnit" onchange="updateDocument()"></select>
+                </div>
+                <div class="map-row" style="grid-template-columns: 20px 90px 1fr;">
+                    <input type="checkbox" id="chkQty" checked onchange="updateDocument()">
+                    <span>الكمية:</span><select id="mQty" onchange="updateDocument()"></select>
+                </div>
+                <div class="map-row" style="grid-template-columns: 20px 90px 1fr;">
+                    <input type="checkbox" id="chkPrice" checked onchange="updateDocument()">
+                    <span>سعر الوحدة:</span><select id="mPrice" onchange="updateDocument()"></select>
+                </div>
+                <div class="map-row" style="grid-template-columns: 20px 90px 1fr;">
+                    <input type="checkbox" id="chkTotal" checked onchange="updateDocument()">
+                    <span>الإجمالي:</span><select id="mTotal" onchange="updateDocument()"></select>
+                </div>
+                <div id="extraColsContainer"></div>
+            </div>
+
+            <button type="button" class="btn" id="btnExport" onclick="window.print()">توليد وحفظ عرض السعر (PDF)</button>
+        </div>
+        <div class="preview-area">
+            <div class="paper-wrapper" id="screenPaper">
+                <table class="master-table">
+                    <thead><tr><td><div class="header-spacer"></div></td></tr></thead>
+
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="page-break-after">
+                                    <div class="meta-block">
+                                        <div>الموضوع : عرض سعر (<span id="outSubject1"></span>)</div>
+                                        <div>الموقع : <span id="outLocation1"></span></div>
+                                        <div>العميل : <span id="outClient1"></span></div>
+                                        <div>الرقم المرجعي : <span id="outRef"></span></div>
+                                        <div>التاريخ : <span id="outDate"></span></div>
+                                    </div>
+
+                                    <div class="intro-block">
+                                        <div><strong>السادة الأفاضل،</strong></div>
+                                        <div style="margin-top: 6px;">يسعدنا أن نقدم لكم عرض أسعارنا الخاص بـ <span id="outSubject2"></span> في <span id="outLocation2"></span>.</div>
+                                    </div>
+
+                                    <div style="font-weight: 700; font-size: 13.5px;">ملخص تكلفة المشروع:</div>
+                                    <table class="summary-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 60px; text-align: center;">الرقم</th>
+                                                <th style="text-align: right;">الوصف</th>
+                                                <th style="width: 170px; text-align: left;">المبلغ (<span id="outCurrency"></span>)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td style="text-align: center;">1</td>
+                                                <td id="outSubject3"></td>
+                                                <td style="text-align: left;" id="outSubTotal">0.00</td>
+                                            </tr>
+                                            <tr id="summaryVatRow" style="display: none;">
+                                                <td></td>
+                                                <td style="text-align: center;">ضريبة القيمة المضافة (<span id="outVatRateLabel">15</span>%)</td>
+                                                <td style="text-align: left;" id="outVatAmount">0.00</td>
+                                            </tr>
+                                            <tr class="summary-total">
+                                                <td></td>
+                                                <td style="text-align: center;" id="outGrandTotalLabel">الإجمالي</td>
+                                                <td style="text-align: left;" id="outGrandTotal">0.00</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <div class="exclusions-block">
+                                        <h4>الاستثناءات من النطاق:</h4>
+                                        <div id="outExclusions"></div>
+                                    </div>
+                                </div>
+
+                                <div id="boqContainer">
+                                    <div class="boq-title" id="boqMainTitle">جدول الكميات والأسعار التفصيلي (Bill of Quantities)</div>
+                                    <table class="boq-table" id="boqTable">
+                                        <thead id="boqHead"></thead>
+                                        <tbody id="boqBody"></tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <tfoot><tr><td><div class="footer-spacer"></div></td></tr></tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        const OFFICIAL_LETTERHEAD = "letterhead.jpg";
+
+        function setLetterhead(src) {
+            document.getElementById('printLetterheadImg').src = src;
+            document.getElementById('screenPaper').style.backgroundImage = "url('" + src + "')";
+        }
+        setLetterhead(OFFICIAL_LETTERHEAD);
+
+        let rowsData = [], isCsvMode = false, csvMatrix = [], cleanXlsxRows = [];
+        let currentHeaders = [], extraCols = [];
+        const today = new Date();
+        document.getElementById('outDate').innerText = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+        function toggleVatInput() {
+            const hasVat = document.getElementById('inHasVat').value === 'yes';
+            document.getElementById('vatRateBox').style.display = hasVat ? 'block' : 'none';
+        }
+
+        document.getElementById('bgInput').addEventListener('change', function(e) {
+            const fileList = e.target.files;
+            if (!fileList || fileList.length === 0) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) { setLetterhead(evt.target.result); };
+            reader.readAsDataURL(fileList.item(0));
+        });
+
+        function parseCSVText(text) {
+            const rows = [];
+            let row = [], cell = '', inQuotes = false;
+            const firstLine = text.split(/\r?\n/).shift() || '';
+            const sep = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+            for (let i = 0; i < text.length; i++) {
+                const ch = text.charAt(i), next = text.charAt(i + 1);
+                if (ch === '"') {
+                    if (inQuotes && next === '"') { cell += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                } else if (ch === sep && !inQuotes) {
+                    row.push(cell.trim()); cell = '';
+                } else if ((ch === '\r' || ch === '\n') && !inQuotes) {
+                    if (ch === '\r' && next === '\n') i++;
+                    row.push(cell.trim()); rows.push(row);
+                    row = []; cell = '';
+                } else {
+                    cell += ch;
+                }
+            }
+            if (cell !== '' || row.length > 0) { row.push(cell.trim()); rows.push(row); }
+            return rows;
+        }
+
+        async function unzipXlsxEntries(buffer) {
+            const bytes = new Uint8Array(buffer);
+            const view = new DataView(buffer);
+            const files = {};
+            let i = 0;
+            while (i < bytes.length - 30) {
+                if (view.getUint32(i, true) === 0x04034b50) {
+                    const flags = view.getUint16(i + 6, true);
+                    const comp = view.getUint16(i + 8, true);
+                    let compSize = view.getUint32(i + 18, true);
+                    const nameLen = view.getUint16(i + 26, true);
+                    const extraLen = view.getUint16(i + 28, true);
+                    const name = new TextDecoder('utf-8').decode(bytes.subarray(i + 30, i + 30 + nameLen));
+                    const dataStart = i + 30 + nameLen + extraLen;
+
+                    if ((flags & 0x08) && compSize === 0) {
+                        let scan = dataStart;
+                        while (scan < bytes.length - 16) {
+                            if (view.getUint32(scan, true) === 0x08074b50) {
+                                compSize = view.getUint32(scan + 8, true);
+                                break;
+                            }
+                            scan++;
+                        }
+                    }
+
+                    const compData = bytes.subarray(dataStart, dataStart + compSize);
+                    if (comp === 0) {
+                        files[name] = compData;
+                    } else if (comp === 8) {
+                        const ds = new DecompressionStream('deflate-raw');
+                        const writer = ds.writable.getWriter();
+                        writer.write(compData);
+                        writer.close();
+                        const resp = new Response(ds.readable);
+                        files[name] = new Uint8Array(await resp.arrayBuffer());
+                    }
+                    i = dataStart + compSize + ((flags & 0x08) ? 16 : 0);
+                } else {
+                    i++;
+                }
+            }
+            return files;
+        }
+        async function parseCleanXlsxDirect(buffer) {
+            cleanXlsxRows = [];
+            try {
+                const files = await unzipXlsxEntries(buffer);
+                const parser = new DOMParser();
+
+                const strings = [];
+                if (files['xl/sharedStrings.xml']) {
+                    const sstXml = new TextDecoder('utf-8').decode(files['xl/sharedStrings.xml']);
+                    const sstDoc = parser.parseFromString(sstXml, 'text/xml');
+                    const siNodes = sstDoc.getElementsByTagName('si');
+                    for (let i = 0; i < siNodes.length; i++) {
+                        const tNodes = siNodes[i].getElementsByTagName('t');
+                        let txt = '';
+                        for (let j = 0; j < tNodes.length; j++) txt += tNodes[j].textContent || '';
+                        strings.push(txt);
+                    }
+                }
+
+                const sheetKey = Object.keys(files).find(k => k.match(/^xl\/worksheets\/sheet1\.xml$/i)) || Object.keys(files).find(k => k.match(/^xl\/worksheets\/sheet\d+\.xml$/i));
+                if (sheetKey && files[sheetKey]) {
+                    const shXml = new TextDecoder('utf-8').decode(files[sheetKey]);
+                    const shDoc = parser.parseFromString(shXml, 'text/xml');
+                    const rowNodes = shDoc.getElementsByTagName('row');
+                    for (let r = 0; r < rowNodes.length; r++) {
+                        const rIdx = (parseInt(rowNodes[r].getAttribute('r'), 10) || (r + 1)) - 1;
+                        while (cleanXlsxRows.length <= rIdx) cleanXlsxRows.push([]);
+                        const cNodes = rowNodes[r].getElementsByTagName('c');
+                        for (let c = 0; c < cNodes.length; c++) {
+                            const ref = cNodes[c].getAttribute('r') || '';
+                            const colLetters = ref.replace(/[0-9]/g, '');
+                            let colIdx = 0;
+                            for (let k = 0; k < colLetters.length; k++) {
+                                colIdx = colIdx * 26 + (colLetters.charCodeAt(k) - 64);
+                            }
+                            colIdx = colIdx > 0 ? colIdx - 1 : c;
+
+                            const type = cNodes[c].getAttribute('t');
+                            const vNode = cNodes[c].getElementsByTagName('v').item(0);
+                            const isNode = cNodes[c].getElementsByTagName('t').item(0);
+                            let val = '';
+                            if (type === 's' && vNode) {
+                                val = strings[parseInt(vNode.textContent, 10)] || '';
+                            } else if (type === 'inlineStr' && isNode) {
+                                val = isNode.textContent || '';
+                            } else if (vNode) {
+                                val = vNode.textContent || '';
+                            }
+                            while (cleanXlsxRows[rIdx].length <= colIdx) cleanXlsxRows[rIdx].push('');
+                            cleanXlsxRows[rIdx][colIdx] = val;
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function addExtraColumn() {
+            if (!currentHeaders.length) return;
+            extraCols.push({ id: Date.now(), colName: currentHeaders[0], customTitle: '' });
+            renderExtraColsUI();
+            updateDocument();
+        }
+
+        function removeExtraColumn(id) {
+            extraCols = extraCols.filter(function(c) { return c.id !== id; });
+            renderExtraColsUI();
+            updateDocument();
+        }
+        function renderExtraColsUI() {
+            const box = document.getElementById('extraColsContainer');
+            if (!box) return;
+            box.innerHTML = '';
+            extraCols.forEach(function(ec) {
+                const div = document.createElement('div');
+                div.className = 'map-row';
+                div.style.gridTemplateColumns = '20px 1fr 1fr';
+                div.style.background = '#f8fafc';
+                div.style.padding = '4px';
+                div.style.borderRadius = '4px';
+
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.innerText = '×';
+                delBtn.title = 'حذف العمود';
+                delBtn.style.cssText = 'background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold; padding:0;';
+                delBtn.onclick = function() { removeExtraColumn(ec.id); };
+
+                const sel = document.createElement('select');
+                currentHeaders.forEach(function(h) {
+                    const opt = document.createElement('option');
+                    opt.value = h; opt.text = h;
+                    if (h === ec.colName) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+                sel.onchange = function() { ec.colName = sel.value; updateDocument(); };
+
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.placeholder = 'عنوان العمود';
+                inp.value = ec.customTitle;
+                inp.oninput = function() { ec.customTitle = inp.value; updateDocument(); };
+
+                div.appendChild(delBtn);
+                div.appendChild(inp);
+                div.appendChild(sel);
+                box.appendChild(div);
+            });
+        }
+
+        document.getElementById('excelInput').addEventListener('change', function(e) {
+            const fileList = e.target.files;
+            if (!fileList || fileList.length === 0) return;
+            const file = fileList.item(0);
+            document.getElementById('fileStatus').innerText = "تم تحميل: " + file.name;
+            isCsvMode = file.name.toLowerCase().endsWith('.csv');
+
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                const buffer = evt.target.result;
+                const selSheet = document.getElementById('selSheet');
+                selSheet.innerHTML = '';
+
+                if (isCsvMode) {
+                    let text = new TextDecoder('utf-8').decode(buffer);
+                    if (text.includes('\uFFFD')) {
+                        text = new TextDecoder('windows-1256').decode(buffer);
+                    }
+                    csvMatrix = parseCSVText(text);
+                    const opt = document.createElement('option');
+                    opt.value = "CSV"; opt.text = "ورقة البيانات (CSV)";
+                    selSheet.appendChild(opt);
+                } else {
+                    await parseCleanXlsxDirect(buffer);
+                    const opt = document.createElement('option');
+                    opt.value = "Sheet1"; opt.text = "الورقة الرئيسية (Sheet1)";
+                    selSheet.appendChild(opt);
+                }
+                document.getElementById('mappingBox').style.display = 'block';
+                autoDetectHeaderRow();
+                readSheet();
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function getActiveMatrix() {
+            return isCsvMode ? csvMatrix : cleanXlsxRows;
+        }
+
+        function autoDetectHeaderRow() {
+            const matrix = getActiveMatrix();
+            for (let i = 0; i < Math.min(matrix.length, 25); i++) {
+                const currentRow = matrix.slice(i, i + 1).shift() || [];
+                const rowStr = currentRow.join(' ').toLowerCase();
+                if ((rowStr.includes('description') || rowStr.includes('بيان') || rowStr.includes('الوصف')) && (rowStr.includes('qty') || rowStr.includes('الكمية') || rowStr.includes('السعر'))) {
+                    document.getElementById('inHeaderRow').value = i + 1;
+                    break;
+                }
+            }
+        }
+
+        function readSheet() {
+            const hIdx = parseInt(document.getElementById('inHeaderRow').value) - 1;
+            const matrix = getActiveMatrix();
+            const rawHeaderRow = matrix.slice(hIdx, hIdx + 1).shift();
+            if (!rawHeaderRow) return;
+
+            const headers = [];
+            rawHeaderRow.forEach(function(h) {
+                const clean = String(h).trim();
+                if (clean !== '') headers.push(clean);
+            });
+            currentHeaders = headers;
+
+            rowsData = [];
+            matrix.slice(hIdx + 1).forEach(function(currentRow) {
+                if (!currentRow || currentRow.every(function(c) { return c === ''; })) return;
+                let obj = {};
+                rawHeaderRow.forEach(function(h, idx) {
+                    const key = String(h).trim();
+                    const cellVal = currentRow.slice(idx, idx + 1).shift();
+                    if (key !== '') obj[key] = (cellVal !== undefined) ? cellVal : '';
+                });
+                rowsData.push(obj);
+            });
+
+            const rules = [
+                { id: 'mItem',  exact: ['item no.', 'item no', 'item #', 'item', 'م', 'رقم', 'رقم البند'], keys: ['item'], opt: true },
+                { id: 'mDesc',  exact: ['description', 'البيان', 'الوصف', 'بيان الأعمال'], keys: ['بيان الأعمال', 'description', 'desc', 'الوصف', 'بيان'], opt: false },
+                { id: 'mUnit',  exact: ['unit', 'unit / الوحدة', 'الوحدة', 'الواحدة'], keys: ['الواحدة', 'الوحدة', 'واحدة', 'وحدة'], opt: true },
+                { id: 'mQty',   exact: ['qty', 'qty.', 'qty / الكمية', 'الكمية'], keys: ['الكمية', 'qty', 'كمية'], opt: false },
+                { id: 'mPrice', exact: ['u/rate', 'unit rate', 'unit rate (sar)', 'السعر الافرادي', 'سعر الوحدة'], keys: ['unit rate', 'u/rate', 'rate', 'افرادي', 'سعر الوحدة'], opt: false },
+                { id: 'mTotal', exact: ['total', 'total price', 'total (sar) / الاجمالي', 'الإجمالي', 'السعر الاجمالي'], keys: ['total', 'اجمالي', 'إجمالي'], opt: true }
+            ];
+
+            rules.forEach(function(r) {
+                const sel = document.getElementById(r.id);
+                sel.innerHTML = r.opt ? '<option value="">-- تلقائي --</option>' : '';
+                let match = 0, exactFound = false;
+                headers.forEach(function(h, idx) {
+                    const opt = document.createElement('option');
+                    opt.value = h;
+                    opt.text = h;
+                    sel.appendChild(opt);
+                    const hLow = h.toLowerCase().replace(/\s+/g, ' ').trim();
+                    if (r.exact && r.exact.some(function(ex) { return hLow === ex || hLow.startsWith(ex + ' '); })) {
+                        match = r.opt ? idx + 1 : idx;
+                        exactFound = true;
+                    } else if (!exactFound && r.keys.some(function(k) { return hLow.includes(k); })) {
+                        match = r.opt ? idx + 1 : idx;
+                    }
+                });
+                sel.selectedIndex = match;
+            });
+
+            renderExtraColsUI();
+            updateDocument();
+        }
+        function updateDocument() {
+            const subj = document.getElementById('inSubject').value;
+            const loc = document.getElementById('inLocation').value;
+            const cli = document.getElementById('inClient').value;
+            const lang = document.getElementById('inTableLang').value;
+            const hasVat = document.getElementById('inHasVat').value === 'yes';
+            const vatRate = parseFloat(document.getElementById('inVatRate').value) || 0;
+
+            document.getElementById('outSubject1').innerText = subj;
+            document.getElementById('outSubject2').innerText = subj;
+            document.getElementById('outSubject3').innerText = subj;
+            document.getElementById('outLocation1').innerText = loc;
+            document.getElementById('outLocation2').innerText = loc;
+            document.getElementById('outClient1').innerText = cli;
+            document.getElementById('outRef').innerText = document.getElementById('inRef').value;
+            document.getElementById('outCurrency').innerText = document.getElementById('inCurrency').value;
+
+            const rawExcl = document.getElementById('inExclusions') ? document.getElementById('inExclusions').value : '';
+            const safeCli = cli ? '<strong>' + cli + '</strong>' : 'العميل';
+            const formattedExcl = rawExcl.replace(/[\[\(]?العميل[\]\)]?/g, safeCli);
+            const outExclEl = document.getElementById('outExclusions');
+            if (outExclEl) {
+                outExclEl.innerHTML = formattedExcl.split(/\r?\n/).map(function(line) {
+                    return line.trim() ? '<p>' + line + '</p>' : '';
+                }).join('');
+            }
+
+            const showItem  = document.getElementById('chkItem') ? document.getElementById('chkItem').checked : true;
+            const showDesc  = document.getElementById('chkDesc') ? document.getElementById('chkDesc').checked : true;
+            const showUnit  = document.getElementById('chkUnit') ? document.getElementById('chkUnit').checked : true;
+            const showQty   = document.getElementById('chkQty') ? document.getElementById('chkQty').checked : true;
+            const showPrice = document.getElementById('chkPrice') ? document.getElementById('chkPrice').checked : true;
+            const showTotal = document.getElementById('chkTotal') ? document.getElementById('chkTotal').checked : true;
+
+            const boqTable = document.getElementById('boqTable');
+            const boqHead = document.getElementById('boqHead');
+            let activeColsCount = 0;
+            let headHtml = '<tr>';
+
+            if (lang === 'en') {
+                boqTable.dir = 'ltr';
+                boqTable.classList.add('ltr-table');
+                document.getElementById('boqMainTitle').innerText = 'Bill of Quantities (BOQ)';
+                document.getElementById('boqMainTitle').style.textAlign = 'left';
+                if (showItem)  { headHtml += '<th style="width:55px;">ITEM #</th>'; activeColsCount++; }
+                if (showDesc)  { headHtml += '<th>DESCRIPTION</th>'; activeColsCount++; }
+                extraCols.forEach(function(ec) { headHtml += '<th>' + (ec.customTitle || ec.colName) + '</th>'; activeColsCount++; });
+                if (showUnit)  { headHtml += '<th style="width:65px;">UNIT</th>'; activeColsCount++; }
+                if (showQty)   { headHtml += '<th style="width:75px;">QTY.</th>'; activeColsCount++; }
+                if (showPrice) { headHtml += '<th style="width:95px;">U/RATE</th>'; activeColsCount++; }
+                if (showTotal) { headHtml += '<th style="width:115px;">TOTAL PRICE</th>'; activeColsCount++; }
+            } else {
+                boqTable.dir = 'rtl';
+                boqTable.classList.remove('ltr-table');
+                document.getElementById('boqMainTitle').innerText = 'جدول الكميات والأسعار التفصيلي';
+                document.getElementById('boqMainTitle').style.textAlign = 'right';
+                if (showItem)  { headHtml += '<th style="width:55px;">رقم البند</th>'; activeColsCount++; }
+                if (showDesc)  { headHtml += '<th>البيان / الوصف</th>'; activeColsCount++; }
+                extraCols.forEach(function(ec) { headHtml += '<th>' + (ec.customTitle || ec.colName) + '</th>'; activeColsCount++; });
+                if (showUnit)  { headHtml += '<th style="width:65px;">الوحدة</th>'; activeColsCount++; }
+                if (showQty)   { headHtml += '<th style="width:75px;">الكمية</th>'; activeColsCount++; }
+                if (showPrice) { headHtml += '<th style="width:95px;">سعر الوحدة</th>'; activeColsCount++; }
+                if (showTotal) { headHtml += '<th style="width:115px;">الإجمالي</th>'; activeColsCount++; }
+            }
+            headHtml += '</tr>';
+            boqHead.innerHTML = headHtml;
+
+            if (!rowsData.length) return;
+            const cItem = document.getElementById('mItem').value, cDesc = document.getElementById('mDesc').value;
+            const cUnit = document.getElementById('mUnit').value, cQty = document.getElementById('mQty').value;
+            const cPrice = document.getElementById('mPrice').value, cTotal = document.getElementById('mTotal').value;
+
+            const tbody = document.getElementById('boqBody');
+            tbody.innerHTML = '';
+            let subTotal = 0, counter = 1, stopReading = false;
+
+            rowsData.forEach(function(row) {
+                if (stopReading) return;
+                const rawDesc = String(row[cDesc] || '').trim();
+                let itemVal = cItem ? String(row[cItem] || '').trim() : '';
+                if (/^\d+\.\d+$/.test(itemVal)) {
+                    itemVal = String(parseFloat(Number(itemVal).toPrecision(12)));
+                }
+
+                const descLow = rawDesc.toLowerCase();
+                const itemLow = itemVal.toLowerCase();
+
+                if (itemLow === 'summary' || descLow === 'summary' || (itemLow.startsWith('item') && descLow === 'description') || descLow.startsWith('total amount المجموع') || descLow.startsWith('grand total') || descLow.startsWith('المجموع النهائي')) {
+                    stopReading = true;
+                    return;
+                }
+
+                if (itemVal.includes('المجموع') || descLow.startsWith('المجموع') || descLow.startsWith('total') || descLow.startsWith('sub total') || descLow.startsWith('subtotal') || descLow.startsWith('vat') || descLow.includes('ضريبة') || descLow.includes('الضريبة')) return;
+
+                const cleanNum = function(val) {
+                    if (typeof val === 'number') return val;
+                    return parseFloat(String(val || '').replace(/,/g, '').trim());
+                };
+
+                const qty = cleanNum(row[cQty]);
+                const price = cleanNum(row[cPrice]);
+                const unit = cUnit ? String(row[cUnit] || '').trim() : '';
+
+                if ((isNaN(qty) || qty <= 0) && (rawDesc !== '' || itemVal !== '')) {
+                    if (itemVal === '' && unit === '' && rawDesc.length > 90 && !rawDesc.toUpperCase().startsWith('DIVISION')) return;
+
+                    let secHtml = '<tr style="background:#e2e8f0; font-weight:700; color:#0f172a;">';
+                    if (showItem) secHtml += '<td>' + itemVal + '</td>';
+                    const spanCols = Math.max(1, activeColsCount - (showItem ? 1 : 0));
+                    secHtml += '<td colspan="' + spanCols + '" class="desc-cell" style="white-space:pre-line;">' + (rawDesc || itemVal) + '</td>';
+                    secHtml += '</tr>';
+                    tbody.innerHTML += secHtml;
+                    return;
+                }
+
+                if (!rawDesc || isNaN(qty) || qty <= 0) return;
+
+                const itemNo = itemVal || counter;
+                const rawTotal = cTotal ? cleanNum(row[cTotal]) : NaN;
+                const total = !isNaN(rawTotal) ? rawTotal : (qty * (isNaN(price) ? 0 : price));
+                
+                subTotal += total;
+                counter++;
+
+                let rowHtml = '<tr>';
+                if (showItem)  rowHtml += '<td>' + itemNo + '</td>';
+                if (showDesc)  rowHtml += '<td class="desc-cell" style="white-space:pre-line;">' + rawDesc + '</td>';
+                extraCols.forEach(function(ec) { rowHtml += '<td>' + (row[ec.colName] !== undefined ? row[ec.colName] : '-') + '</td>'; });
+                if (showUnit)  rowHtml += '<td>' + (unit || '-') + '</td>';
+                if (showQty)   rowHtml += '<td>' + qty.toLocaleString('en-US') + '</td>';
+                if (showPrice) rowHtml += '<td>' + (isNaN(price) ? '0.00' : price.toLocaleString('en-US', {minimumFractionDigits: 2})) + '</td>';
+                if (showTotal) rowHtml += '<td><strong>' + total.toLocaleString('en-US', {minimumFractionDigits: 2}) + '</strong></td>';
+                rowHtml += '</tr>';
+                tbody.innerHTML += rowHtml;
+            });
+
+            const fmt = function(n) { return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+            let finalGrandTotal = subTotal;
+            const labelSpan = Math.max(1, activeColsCount - 1);
+
+            if (hasVat) {
+                const vatAmount = subTotal * (vatRate / 100);
+                finalGrandTotal = subTotal + vatAmount;
+
+                const lblBefore = (lang === 'en') ? 'Total Before VAT' : 'المجموع قبل الضريبة';
+                const lblVat    = (lang === 'en') ? 'VAT (' + vatRate + '%)' : 'ضريبة القيمة المضافة (' + vatRate + '%)';
+                const lblAfter  = (lang === 'en') ? 'Total After VAT' : 'المجموع الكلي بعد الضريبة';
+
+                tbody.innerHTML += '<tr class="boq-summary-row"><td colspan="' + labelSpan + '">' + lblBefore + '</td><td>' + fmt(subTotal) + '</td></tr>';
+                tbody.innerHTML += '<tr class="boq-summary-row"><td colspan="' + labelSpan + '">' + lblVat + '</td><td>' + fmt(vatAmount) + '</td></tr>';
+                tbody.innerHTML += '<tr class="boq-grand-row"><td colspan="' + labelSpan + '">' + lblAfter + '</td><td>' + fmt(finalGrandTotal) + '</td></tr>';
+            } else {
+                const lblTotal = (lang === 'en') ? 'Total' : 'المجموع الكلي';
+                tbody.innerHTML += '<tr class="boq-grand-row"><td colspan="' + labelSpan + '">' + lblTotal + '</td><td>' + fmt(finalGrandTotal) + '</td></tr>';
+            }
+
+            document.getElementById('outSubTotal').innerText = fmt(subTotal);
+            if (hasVat) {
+                const vatAmount = subTotal * (vatRate / 100);
+                document.getElementById('summaryVatRow').style.display = 'table-row';
+                document.getElementById('outVatRateLabel').innerText = vatRate;
+                document.getElementById('outVatAmount').innerText = fmt(vatAmount);
+                document.getElementById('outGrandTotalLabel').innerText = 'الإجمالي بعد الضريبة';
+                document.getElementById('outGrandTotal').innerText = fmt(finalGrandTotal);
+            } else {
+                document.getElementById('summaryVatRow').style.display = 'none';
+                document.getElementById('outGrandTotalLabel').innerText = 'الإجمالي';
+                document.getElementById('outGrandTotal').innerText = fmt(subTotal);
+            }
+        }
+
+        window.onload = updateDocument;
+    </script>
+</body>
+</html>
